@@ -19,7 +19,11 @@ def main(data_path: str) -> None:
     engine = create_engine(db_url)
     with open(data_path, "r") as f:
         sql_script = f.read()
-    data = pd.read_sql(sql_script, engine)
+    with engine.connect() as conn:
+        data = pd.read_sql(
+            sql=sql_script,
+            con=conn.connection
+        )
     train_model(data, "total_sales", data_path)
 
 def train_model(data: pd.DataFrame, target: str, data_path: str) -> None:
