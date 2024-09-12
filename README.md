@@ -1,122 +1,93 @@
-# Machine Learning
+# Project: Sales Prediction Model with Random Forest
 
-Welcome to this ML project!
+This project focuses on building and using a machine learning model to predict sales using a Random Forest Regressor. The project consists of two main components:
 
-## Installing Dependencies
+1. **Training the Model:** Data is extracted from a PostgreSQL database using a user-provided SQL script, and the model is trained on this data.
+2. **Predicting Sales:** The trained model is used to predict sales on new data, with predictions saved back to the database.
 
-To install the project dependencies, use the `requirements.txt` file:
+The project employs environment variables for secure database connection management and uses Python libraries such as `pandas`, `SQLAlchemy`, and `scikit-learn`.
 
-```sh
-pip install -r requirements.txt
-```
+## Features
 
-## Project Structure
+- **Data Ingestion:** Extracts data from a PostgreSQL database using an SQL script.
+- **Random Forest Model Training:** Trains a Random Forest Regressor on historical data.
+- **Sales Prediction:** Uses the trained model to predict future sales.
+- **Model and Prediction Management:** The trained model is saved in serialized form, and predictions are written back to the database.
 
-- `data`: Contains the data used by the model.
-- `models`: Contains the machine learning models and encoders.
-- `notebooks`: Contains the notebooks used for data exploration and visualization.
-- `src`: Contains the main source code to collect and process data, train models and make predictions.
-- `tests`: Contains unit and integration tests to guarantee code stability.
+## How It Works
+
+### 1. Training the Model
+The training process involves:
+- **Database Connection:** Using `dotenv` to load environment variables for securely connecting to the PostgreSQL database.
+- **Data Loading:** The SQL script specified by the user is executed to retrieve the data.
+- **Model Training:** A Random Forest Regressor is trained on the extracted dataset.
+- **Model Saving:** The trained model is serialized and saved as a `.pkl` file in the `models` directory.
+
+### 2. Predicting Sales
+The prediction process involves:
+- **Model Loading:** The previously trained model is loaded from the saved `.pkl` file.
+- **Data Loading:** The new data for which predictions are to be made is fetched using a provided SQL script.
+- **Prediction and Storage:** Predictions are generated using the model and stored back into the PostgreSQL database in a specified table.
 
 ## Usage
 
-### Configure your AWS CLI
-
-Having [AWS CLI installed](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html), configure your credentials on a profile:
-```bash
-aws configure --profile mlops
-```
-
-To set it as deafult profile:
-
-Linux:
-```bash
-export AWS_PROFILE=mlops
-```
-
-Windows CMD:
-```bash
-set AWS_PROFILE=mlops
-```
-
-Windows PowerShell:
-```bash
-env:AWS_PROFILE = "mlops"
-```
-
-### Create and Configure ECR repository
-
-To set up the project, let's build the Docker image from the `Dockerfile` with the `test` tag.
-```bash
-docker build --platform linux/amd64 -t lambda-predict-image:test .
-```
-
-Testing Container Application locally:
-> [!IMPORTANT]  
-> To test locally, the following Environment Variables must be exported to the Docker container:
-> - BUCKET_NAME, MODEL_PATH and ENCODER_PATH, to load model and encoder stored in S3 Bucket;
-> - AWS_S3_ACCESS_KEY_ID and AWS_S3_SECRET_ACCESS_KEY.
-```bash
-docker run -p 9500:8080 lambda-predict-image:test
-curl "http://localhost:9500/2015-03-31/functions/function/invocations" -d "{}"
-curl -X POST -H "Content-Type: application/json" -d '{"body": "{\"age\": 42, \"job\": \"entrepreneur\", \"marital\": \"married\", \"education\": \"primary\", \"balance\": 558, \"housing\": \"yes\", \"duration\": 186, \"campaign\": 2}"}' "http://localhost:9500/2015-03-31/functions/function/invocations"
-```
-
-Then run the following script to create a repository in AWS ECR:
-
-> [!NOTE]  
-> Save the `REPOSITORY_URI`.
+### To Train the Model
 
 ```bash
-python3 src/create_repository.py
+python src/train.py <path_to_sql_script>
 ```
 
-Then login to ECR using the Docker CLI:
+- `<path_to_sql_script>`: Path to the SQL file that retrieves the training data from the PostgreSQL database.
 
-> [!IMPORTANT]  
-> Substitute `AWS_ACCOUNT_ID` for your AWS Account ID.
+Example:
 
 ```bash
-aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin AWS_ACCOUNT_ID.dkr.ecr.us-east-2.amazonaws.com
+python src/train.py data/train.sql
 ```
 
-Rebuild your Docker image (if needed), tag your local Docker image (`Dockerfile`) into the repository as the latest version and push the image:
+The trained model will be saved in the `models` directory.
 
-> [!IMPORTANT]  
-> Substitute `REPOSITORY_URI` for the correct repository's URI.
+### To Predict Sales
 
 ```bash
-docker build --platform linux/amd64 -t lambda-predict-image:test .
-
-docker tag lambda-predict-image:test REPOSITORY_URI:latest
-
-docker push REPOSITORY_URI:latest
+python src/predict.py <path_to_model> <path_to_sql_script>
 ```
 
-### Create Lambda Function
+- `<path_to_model>`: Path to the saved model file (`.pkl`).
+- `<path_to_sql_script>`: Path to the SQL script that retrieves the data for prediction.
 
-To create a Lambda function from the ECR image, run:
+Example:
 
 ```bash
-python src/create_function.py
+python src/predict.py models/model-train.pkl data/predict.sql
 ```
 
-### Create API Gateway
+Predictions will be saved back to the PostgreSQL database in the table specified by the environment variables.
 
-To create an API Gateway that exposes the Lambda function, run:
+## Environment Variables
+
+The project uses environment variables for database credentials and configuration, stored in a `.env` file. Ensure the following variables are defined:
+
+- `DB_USER`: Database username
+- `DB_PASSWORD`: Database password
+- `DB_HOST`: Database host
+- `DB_PORT`: Database port
+- `DB_NAME`: Database name
+- `DB_PREDICTION_TABLE`: Table where predictions will be stored
+- `DB_PREDICTION_SCHEMA`: Schema where the predictions table will be stored
+
+## Dependencies
+
+The project relies on the following Python libraries:
+
+- `pandas`
+- `SQLAlchemy`
+- `scikit-learn`
+- `psycopg2`
+- `python-dotenv`
+
+To install them, run:
 
 ```bash
-python src/create_api.py
+pip install -r requirements.txt
 ```
-
-### Test
-
-To test the deployed instances, run the following command:
-
-```bash
-python tests/test.py
-```
-
-# References
-
-[Boto3 Documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html)
