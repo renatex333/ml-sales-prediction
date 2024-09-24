@@ -34,7 +34,7 @@ The prediction process involves:
 ### To Train the Model
 
 ```bash
-python src/train.py <path_to_sql_script>
+python3 train.py <path_to_sql_script>
 ```
 
 - `<path_to_sql_script>`: Path to the SQL file that retrieves the training data from the PostgreSQL database.
@@ -42,7 +42,7 @@ python src/train.py <path_to_sql_script>
 Example:
 
 ```bash
-python src/train.py data/train.sql
+python3 train.py data/train.sql
 ```
 
 The trained model will be saved in the `models` directory.
@@ -50,7 +50,7 @@ The trained model will be saved in the `models` directory.
 ### To Predict Sales
 
 ```bash
-python src/predict.py <path_to_model> <path_to_sql_script>
+python3 predict.py <path_to_model> <path_to_sql_script>
 ```
 
 - `<path_to_model>`: Path to the saved model file (`.pkl`).
@@ -59,7 +59,7 @@ python src/predict.py <path_to_model> <path_to_sql_script>
 Example:
 
 ```bash
-python src/predict.py models/model-train.pkl data/predict.sql
+python3 predict.py models/model.pkl data/predict.sql
 ```
 
 Predictions will be saved back to the PostgreSQL database in the table specified by the environment variables.
